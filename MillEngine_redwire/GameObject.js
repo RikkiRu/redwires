@@ -3,6 +3,7 @@ function GameObject(id)
 	this.id = id;
 	this.point = new Point(0, 0);
 	this.size = new Size(0, 0, true);
+	this.draggable = false;
 }
 
 GameObject.prototype.addedToScene = function()
@@ -29,4 +30,20 @@ GameObject.prototype.draw = function(ctx)
 	ctx.rect(-this.size.w2, -this.size.h2, this.size.w, this.size.h);
 	ctx.fillStyle = "red";
 	ctx.fill();
+}
+
+GameObject.prototype.checkRect = function()
+{
+	var needReInit = this.rect == null || !this.rectPoint.equals(this.point) || !this.rectSize.equalsXY(this.size.w, this.size.h);
+	
+	this.rectPoint = this.point.clone();
+	this.rectSize = new Point(this.size.w, this.size.h);
+	this.rect = new Rect(); 
+	this.rect.fromCenterSize(this.point, this.size);
+}
+
+GameObject.prototype.isIntersect = function(point)
+{
+	this.checkRect();
+	return point.x > this.rect.p1.x && point.x < this.rect.p2.x && point.y > this.rect.p1.y && point.y < this.rect.p2.y; 
 }

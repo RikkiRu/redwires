@@ -3,6 +3,9 @@ function GameLogic()
 	this.cameraSpeed = 1;
 	this.counter = 0;
 	this.colorPresets = new ColorPresets();
+	this.mousePoint = null;
+	this.mouseDown = false;
+	this.wasDrag = false;
 }
 
 GameLogic.prototype.getNewId = function()
@@ -17,9 +20,12 @@ GameLogic.prototype.start = function()
 	
 	var model = new Model();
 	
-	var rm1 = new RedModule();
-	var rmd1 = new RedModuleDrawer(rm1, this.getNewId());
-	game.scene.add(rmd1);
+	for (var i in model.parts)
+	{
+		var part = model.parts[i];
+		var rmd1 = new RedModuleDrawer(part.target, this.getNewId());
+		game.scene.add(rmd1);
+	}
 }
 
 GameLogic.prototype.processKeys = function(dt)
@@ -42,9 +48,60 @@ GameLogic.prototype.processKeys = function(dt)
 		game.render.camera.y += dy;
 		game.scene.markDirtyAll();
 	}
+	
+	if (this.mousePoint != null)
+	{
+		var point = this.mousePoint;
+		var o = game.scene.getIntersect(point);
+		
+		if (o != null && o.draggable)
+		{
+			if (this.mouseDown)
+			{
+				o.drag(point);
+				this.wasDrag = true;
+			}
+			else
+			{
+				if (this.wasDrag)
+				{
+					this.wasDrag = false;
+					o.dragEnd();
+				}
+			}
+		}
+		
+		if (this.hoverObject == o)
+			return;
+		
+		if (this.hoverObject != null)
+		{
+			this.hoverObject.hover = false;
+			this.hoverObject.markDirty();
+		}
+		
+		this.hoverObject = o;
+		if (o != null)
+		{
+			o.hover = true;
+			o.markDirty();
+		}
+		
+		this.mousePoint = null;
+	}
 }
 
 GameLogic.prototype.update = function(dt)
 {
 	this.processKeys(dt);
+}
+
+GameLogic.prototype.mouseMove = function(point)
+{
+	this.mousePoint = point;
+}
+
+GameLogic.prototype.mouseChange = function(down)
+{
+	this.mouseDown = down;
 }

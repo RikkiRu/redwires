@@ -10,7 +10,10 @@ Input.prototype.start = function()
 	document.addEventListener('keydown', function(e) { game.input.toggleKey(e, true); });
 	document.addEventListener('keyup', function(e) { game.input.toggleKey(e, false); });
 	window.addEventListener('blur', function() { game.input.keys = {}; });
-	this.canvas.addEventListener("click", function(event) { game.input.raiseClick(game.input.getGameCoords(event, this), "LEFT"); });
+	//this.canvas.addEventListener("click", function(event) { game.input.raiseClick(game.input.getGameCoords(event, this), "LEFT"); });
+	this.canvas.addEventListener("mousemove", function(event) { game.input.raiseMouseMove(game.input.getGameCoords(event, this)); });
+	this.canvas.addEventListener("mousedown", function(event) { game.input.raiseMouseChange(true); });
+	this.canvas.addEventListener("mouseup", function(event) { game.input.raiseMouseChange(false); });
 	this.canvas.oncontextmenu = function(event) { game.input.raiseClick(game.input.getGameCoords(event, this), "RIGHT"); return false; };
 }
 	
@@ -44,7 +47,16 @@ Input.prototype.toggleKey = function(e, status)
     this.keys[key] = status;
 };
 
-	
+Input.prototype.raiseMouseMove = function(coords)
+{
+	game.logic.mouseMove(coords);
+};
+
+Input.prototype.raiseMouseChange = function(down)
+{
+	game.logic.mouseChange(down);
+};
+
 Input.prototype.raiseClick = function(coords, button)
 {
 };
@@ -54,5 +66,5 @@ Input.prototype.getGameCoords = function(e, context)
 	var coords = context.getBoundingClientRect();
     var offsetX = Number(e.clientX - coords.left);
     var offsetY = Number(e.clientY - coords.top);
-	return { x: -this.camera.x + offsetX * this.canvas.width / this.canvas.offsetWidth, y: -this.camera.y + offsetY * this.canvas.height / this.canvas.offsetHeight };
+	return new Point(-this.camera.x + offsetX * this.canvas.width / this.canvas.offsetWidth, -this.camera.y + offsetY * this.canvas.height / this.canvas.offsetHeight);
 };

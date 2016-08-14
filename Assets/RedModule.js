@@ -3,7 +3,7 @@ function RedModule()
 	var data = {};
 	data.points = [];
 	data.colorPreset = 0;
-	data.bezier = false; // Режим отрисовки - кривые Безье
+	data.invertor = true;
 	
 	data.points.push(new Point(0, 0));
 	data.points.push(new Point(50, 20));

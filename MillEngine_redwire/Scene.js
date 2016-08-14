@@ -28,3 +28,21 @@ Scene.prototype.markDirty = function(gameObject)
 {
 	this.dirtyIDs.push(gameObject.id);
 }
+
+Scene.prototype.getIntersect = function(point)
+{
+	var objects = this.objects;
+	
+	var i = objects.reset();
+	while(i != null)
+	{
+		var o = objects.get(i.id);
+		if (o.intersectable && o.isIntersect(point))
+		{
+			return o;
+		}
+		i = objects.next();
+	}
+	
+	return null;
+}

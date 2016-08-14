@@ -48,3 +48,9 @@ GameObject.prototype.isIntersect = function(point)
 	this.checkRect();
 	return point.x > this.rect.p1.x && point.x < this.rect.p2.x && point.y > this.rect.p1.y && point.y < this.rect.p2.y; 
 }
+
+GameObject.prototype.destroy = function()
+{
+	this.destroyed = true;
+	this.markDirty();
+}

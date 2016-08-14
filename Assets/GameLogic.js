@@ -24,7 +24,7 @@ GameLogic.prototype.start = function()
 	for (var i in model.parts)
 	{
 		var part = model.parts[i];
-		var rmd1 = new RedModuleDrawer(part.target, this.getNewId());
+		var rmd1 = new RedModuleDrawer(model, i, part.target, this.getNewId());
 		game.scene.add(rmd1);
 	}
 }
@@ -40,7 +40,7 @@ GameLogic.prototype.processMouse = function()
 		{
 			if (!this.mouseDown)
 			{
-				this.hoverObject.dragEnd();
+				this.hoverObject.dragEnd(mass);
 				this.hoverObject = null;
 			}
 			else
@@ -102,12 +102,19 @@ GameLogic.prototype.processKeys = function(dt)
 		input.keys["N"] = false;
 		this.clickedObject.insert();
 	}
+	
+	if (input.key("SPACE") && this.clickedObject != null && this.clickedObject.toggleable == true)
+	{
+		input.keys["SPACE"] = false;
+		this.clickedObject.toggle();
+	}
 }
 
 GameLogic.prototype.update = function(dt)
 {
 	this.processMouse();
 	this.processKeys(dt);
+	this.model.process(dt);
 }
 
 GameLogic.prototype.mouseMove = function(point)
@@ -119,6 +126,7 @@ GameLogic.prototype.mouseMove = function(point)
 GameLogic.prototype.mouseChange = function(down)
 {
 	this.mouseDown = down;
+	this.mousePoint = this.mousePointSaved;
 }
 
 GameLogic.prototype.spawn = function(type)
@@ -128,8 +136,8 @@ GameLogic.prototype.spawn = function(type)
 		case "invertor":
 			var target = new RedModule();
 			target.data.invertor = true;
-			this.model.putPart("redModule", target);
-			var rmd1 = new RedModuleDrawer(target, this.getNewId());
+			var id = this.model.putPart("redModule", target);
+			var rmd1 = new RedModuleDrawer(this.model, id, target, this.getNewId());
 			game.scene.add(rmd1);
 			game.scene.markDirtyAll();
 			break;
@@ -137,8 +145,8 @@ GameLogic.prototype.spawn = function(type)
 		case "redModule":
 			var target = new RedModule();
 			target.data.invertor = false;
-			this.model.putPart("redModule", target);
-			var rmd1 = new RedModuleDrawer(target, this.getNewId());
+			var id = this.model.putPart("redModule", target);
+			var rmd1 = new RedModuleDrawer(this.model, id, target, this.getNewId());
 			game.scene.add(rmd1);
 			game.scene.markDirtyAll();
 			break;

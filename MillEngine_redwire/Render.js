@@ -53,13 +53,22 @@ Render.prototype.draw = function()
 	for (var i = 0; i < dirtyIDs.length; i++)
 	{
 		var object = game.scene.objects.get(dirtyIDs[i]);
-		ctx.save();
-		object.draw(ctx);
-		ctx.restore();
+		
+		if (object.destroyed)
+		{
+			game.scene.destroy(object);
+		}
+		else
+		{
+			ctx.save();
+			object.draw(ctx);
+			ctx.restore();
+		}
 	}
 	ctx.restore();
 	
 	dirtyIDs.splice(0, dirtyIDs.length);
+	game.scene.allDirty = false;
 	self.savedCamera = null;
 	
 	window.requestAnimationFrame(self.draw);

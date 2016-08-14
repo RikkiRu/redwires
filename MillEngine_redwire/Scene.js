@@ -2,6 +2,7 @@ function Scene()
 {
 	this.objects = new Iterator("id");
 	this.dirtyIDs = [];
+	this.allDirty = false;
 }
 
 Scene.prototype.add = function(gameObject)
@@ -13,6 +14,11 @@ Scene.prototype.add = function(gameObject)
 
 Scene.prototype.markDirtyAll = function()
 {
+	if (this.allDirty)
+		return;
+	
+	this.allDirty = true;
+	
 	var objects = this.objects;
 	
 	var i = objects.reset();
@@ -69,4 +75,9 @@ Scene.prototype.getIntersect = function(point)
 	}
 	
 	return res;
+}
+
+Scene.prototype.destroy = function(object)
+{
+	this.objects.remove(object.id, true);
 }

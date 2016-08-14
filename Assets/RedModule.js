@@ -28,3 +28,9 @@ RedModule.prototype.fromJson = function(json)
 	this.data = JSON.parse(json);
 	this.init();
 }
+
+RedModule.prototype.toggle = function()
+{
+	this.userState = !this.active;	
+	this.model.registerEvent({target: this});
+}

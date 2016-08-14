@@ -1,4 +1,4 @@
-function RedModuleDrawer(moduleId, module, id)
+function RedModuleDrawer(model, moduleId, module, id)
 {
 	GameObject.call(this, id);
 	this.module = module;
@@ -8,7 +8,9 @@ function RedModuleDrawer(moduleId, module, id)
 	this.draggable = true;
 	this.removable = true;
 	this.insertable = true;
+	this.toggleable = true;
 	this.moduleId = moduleId;
+	this.model = model;
 }
 
 RedModuleDrawer.prototype = Object.create(GameObject.prototype);
@@ -18,6 +20,7 @@ RedModuleDrawer.prototype.lineWidth2 = RedModuleDrawer.prototype.lineWidth / 2;
 RedModuleDrawer.prototype.lineWidth2x = RedModuleDrawer.prototype.lineWidth * 2;
 RedModuleDrawer.prototype.lineWidth4x = RedModuleDrawer.prototype.lineWidth * 4;
 RedModuleDrawer.prototype.lineWidth8x = RedModuleDrawer.prototype.lineWidth * 8;
+RedModuleDrawer.prototype.lineWidth10x = RedModuleDrawer.prototype.lineWidth * 10;
 RedModuleDrawer.prototype.lineWidth32x = RedModuleDrawer.prototype.lineWidth * 32;
 
 RedModuleDrawer.prototype.updateCenter = function()
@@ -74,7 +77,9 @@ RedModuleDrawer.prototype.draw = function(ctx)
 	
 	ctx.beginPath();
 	ctx.fillStyle = color;
-	ctx.arc(points[0].x, points[0].y, this.lineWidth2x, 0, game.constants.Math_PI2);
+	
+	if(invertor) ctx.arc(points[0].x, points[0].y, this.lineWidth2x, 0, game.constants.Math_PI2);
+	
 	var last = points[points.length - 1];
 	ctx.arc(last.x, last.y, this.lineWidth2x, 0, game.constants.Math_PI2);	
 	ctx.fill();
@@ -96,6 +101,21 @@ RedModuleDrawer.prototype.draw = function(ctx)
 			ctx.arc(points[i].x, points[i].y, this.lineWidth, 0, game.constants.Math_PI2);
 			ctx.fill();
 		}
+	}
+	
+	var model = this.model;
+	var outConnections = model.data.connections[this.moduleId];
+	for (var i=0; i<outConnections.length; i++)
+	{
+		var toId = outConnections[i];
+		var toPoint = model.parts[toId].target.data.points[0];
+		
+		ctx.beginPath();
+		ctx.strokeStyle = color;
+		ctx.lineWidth = this.lineWidth;
+		ctx.moveTo(last.x, last.y);
+		ctx.lineTo(toPoint.x, toPoint.y);
+		ctx.stroke();
 	}
 }
 
@@ -120,7 +140,8 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 		
 		if (point.inRadius(pointMouse, this.lineWidth4x))
 		{
-			this.capturedDragPoint  = point;
+			this.capturedDragPoint = point;
+			this.capturedDragPointIndx = i;
 			point.x = pointMouse.x;
 			point.y = pointMouse.y;
 			this.updateCenter();
@@ -132,9 +153,48 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 	return false;
 }
 
-RedModuleDrawer.prototype.dragEnd = function()
+RedModuleDrawer.prototype.dragEnd = function(nearParts)
 {
+	if (this.capturedDragPoint == null)
+		return;
+	
+	var module = this.module;
+	var points = module.data.points;
+	
+	if (this.capturedDragPointIndx == points.length - 1)
+	{
+		var captureRadius = this.lineWidth10x;
+
+		for (var i=0; i<nearParts.length; i++)
+		{
+			var o = nearParts[i];
+			if (o == this) continue;
+			
+			var enter = o.module.data.points[0];
+			
+			if (enter.inRadius(this.capturedDragPoint, captureRadius))
+			{
+				this.model.putConnection(this.moduleId, o.moduleId);
+				this.markDirty();
+			}
+		}
+		
+		var model = this.model;
+		var outConnections = model.data.connections[this.moduleId];
+		for (var i=0; i<outConnections.length; i++)
+		{
+			var toId = outConnections[i];
+			var toPoint = model.parts[toId].target.data.points[0];
+			if (!toPoint.inRadius(this.capturedDragPoint, captureRadius))
+			{
+				model.removeConnection(this.moduleId, toId);
+				this.markDirty();
+			}
+		}
+	}
+	
 	this.capturedDragPoint = null;
+	this.capturedDragPointIndx = null;
 }
 
 RedModuleDrawer.prototype.remove = function(pointMouse)
@@ -150,7 +210,8 @@ RedModuleDrawer.prototype.remove = function(pointMouse)
 		{
 			if (points.length < 3)
 			{
-				// destroy object
+				this.model.removePart(this.moduleId);
+				this.destroy();
 				return;
 			}
 			else
@@ -172,5 +233,11 @@ RedModuleDrawer.prototype.insert = function()
 	var diff = points[points.length - 1].diff(points[points.length - 2]);
 	points.push(points[points.length - 1].add(diff));
 	this.updateCenter();
+	this.markDirty();
+}
+
+RedModuleDrawer.prototype.toggle = function()
+{
+	this.module.toggle();
 	this.markDirty();
 }

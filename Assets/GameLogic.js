@@ -1,16 +1,25 @@
 function GameLogic()
 {
 	this.cameraSpeed = 1;
+	this.counter = 0;
+	this.colorPresets = new ColorPresets();
+}
+
+GameLogic.prototype.getNewId = function()
+{
+	this.counter++;
+	return this.counter;
 }
 
 GameLogic.prototype.start = function()
 {
 	console.log("GameLogic.start()");
 	
-	var o1 = new GameObject("o1");
-	o1.size = new Size(11, 11, true);
-	o1.point = new Point(100, 50);
-	game.scene.add(o1);
+	var model = new Model();
+	
+	var rm1 = new RedModule();
+	var rmd1 = new RedModuleDrawer(rm1, this.getNewId());
+	game.scene.add(rmd1);
 }
 
 GameLogic.prototype.processKeys = function(dt)

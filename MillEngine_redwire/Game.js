@@ -5,6 +5,8 @@ function Game()
 	this.render = new Render(this.canvas, this.scene);
 	this.logic = new GameLogic();
 	this.input = new Input(this.canvas, this.render.camera);
+	this.constants = {};
+	this.constants.Math_PI2 = Math.PI * 2;
 }
 
 Game.prototype.awake = function()

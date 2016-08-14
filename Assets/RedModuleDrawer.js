@@ -1,4 +1,4 @@
-function RedModuleDrawer(module, id)
+function RedModuleDrawer(moduleId, module, id)
 {
 	GameObject.call(this, id);
 	this.module = module;
@@ -6,6 +6,9 @@ function RedModuleDrawer(module, id)
 	this.intersectable = true;
 	this.hover = false;
 	this.draggable = true;
+	this.removable = true;
+	this.insertable = true;
+	this.moduleId = moduleId;
 }
 
 RedModuleDrawer.prototype = Object.create(GameObject.prototype);
@@ -46,6 +49,11 @@ RedModuleDrawer.prototype.updateCenter = function()
 	this.size = new Size(sx, sy, true);
 }
 
+RedModuleDrawer.prototype.markDirty = function()
+{
+	this.scene.markDirtyAll();
+}
+
 RedModuleDrawer.prototype.draw = function(ctx)
 {	
 	var module = this.module;
@@ -82,7 +90,7 @@ RedModuleDrawer.prototype.draw = function(ctx)
 	if (this.hover)
 	{
 		ctx.fillStyle = "#0000FF";
-		for (var i = 0; i < points.length; i++)
+		for (var i = 1; i < points.length - 1; i++)
 		{
 			ctx.beginPath();
 			ctx.arc(points[i].x, points[i].y, this.lineWidth, 0, game.constants.Math_PI2);
@@ -100,7 +108,7 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 		point.y = pointMouse.y;
 		this.updateCenter();
 		this.markDirty();
-		return;
+		return true;
 	}
 	
 	var module = this.module;
@@ -117,12 +125,52 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 			point.y = pointMouse.y;
 			this.updateCenter();
 			this.markDirty();
-			return;
+			return true;
 		}
 	}
+	
+	return false;
 }
 
 RedModuleDrawer.prototype.dragEnd = function()
 {
 	this.capturedDragPoint = null;
+}
+
+RedModuleDrawer.prototype.remove = function(pointMouse)
+{
+	var module = this.module;
+	var points = module.data.points;
+	
+	for (var i = 0; i < points.length; i++)
+	{
+		var point = points[i];
+		
+		if (point.inRadius(pointMouse, this.lineWidth4x))
+		{
+			if (points.length < 3)
+			{
+				// destroy object
+				return;
+			}
+			else
+			{
+				points.splice(i, 1);
+				this.updateCenter();
+				this.markDirty();
+				return;
+			}
+		}
+	}
+}
+
+RedModuleDrawer.prototype.insert = function()
+{
+	var module = this.module;
+	var points = module.data.points;
+	
+	var diff = points[points.length - 1].diff(points[points.length - 2]);
+	points.push(points[points.length - 1].add(diff));
+	this.updateCenter();
+	this.markDirty();
 }

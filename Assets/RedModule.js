@@ -5,10 +5,9 @@ function RedModule()
 	data.colorPreset = 0;
 	data.invertor = true;
 	
-	data.points.push(new Point(0, 0));
-	data.points.push(new Point(50, 20));
-	data.points.push(new Point(70, 40));
-	data.points.push(new Point(100, 20));
+	data.points.push(game.render.getScreenCenter());
+	var p2 = game.render.getScreenCenter(); p2.x += 50;
+	data.points.push(p2);
 	
 	this.data = data;
 	this.init();

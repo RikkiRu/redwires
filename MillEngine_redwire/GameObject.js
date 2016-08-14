@@ -4,6 +4,7 @@ function GameObject(id)
 	this.point = new Point(0, 0);
 	this.size = new Size(0, 0, true);
 	this.draggable = false;
+	this.removable = false;
 }
 
 GameObject.prototype.addedToScene = function()

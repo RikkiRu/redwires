@@ -36,3 +36,13 @@ Point.prototype.inRadius = function(point, radius)
 	var dist = this.distanceTo(point);
 	return dist < radius;
 }
+
+Point.prototype.diff = function(point)
+{
+	return new Point(this.x - point.x, this.y - point.y);
+}
+
+Point.prototype.add = function(point)
+{
+	return new Point(this.x + point.x, this.y + point.y);
+}

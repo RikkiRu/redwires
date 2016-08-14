@@ -4,8 +4,8 @@ function GameLogic()
 	this.counter = 0;
 	this.colorPresets = new ColorPresets();
 	this.mousePoint = null;
+	this.mousePointSaved = null;
 	this.mouseDown = false;
-	this.wasDrag = false;
 }
 
 GameLogic.prototype.getNewId = function()
@@ -19,12 +19,54 @@ GameLogic.prototype.start = function()
 	console.log("GameLogic.start()");
 	
 	var model = new Model();
+	this.model = model;
 	
 	for (var i in model.parts)
 	{
 		var part = model.parts[i];
 		var rmd1 = new RedModuleDrawer(part.target, this.getNewId());
 		game.scene.add(rmd1);
+	}
+}
+
+GameLogic.prototype.processMouse = function()
+{
+	if (this.mousePoint != null)
+	{
+		var point = this.mousePoint;
+		var mass = game.scene.getIntersect(point);
+		
+		if (this.hoverObject != null)
+		{
+			if (!this.mouseDown)
+			{
+				this.hoverObject.dragEnd();
+				this.hoverObject = null;
+			}
+			else
+			{
+				this.hoverObject.drag(point);
+			}
+		}
+		else
+		{
+			if (this.mouseDown)
+			{
+				for (var i=0; i<mass.length; i++)
+				{
+					var o = mass[i];
+					if (!o.draggable) continue;
+				
+					if (o.drag(point))
+					{
+						this.hoverObject = o;
+						this.clickedObject = o;
+						break;
+					}
+				}
+			}
+		}		
+		this.mousePoint = null;
 	}
 }
 
@@ -49,59 +91,60 @@ GameLogic.prototype.processKeys = function(dt)
 		game.scene.markDirtyAll();
 	}
 	
-	if (this.mousePoint != null)
+	if (input.key("X") && this.clickedObject != null && this.clickedObject.removable == true && this.mousePointSaved != null)
 	{
-		var point = this.mousePoint;
-		var o = game.scene.getIntersect(point);
-		
-		if (o != null && o.draggable)
-		{
-			if (this.mouseDown)
-			{
-				o.drag(point);
-				this.wasDrag = true;
-			}
-			else
-			{
-				if (this.wasDrag)
-				{
-					this.wasDrag = false;
-					o.dragEnd();
-				}
-			}
-		}
-		
-		if (this.hoverObject == o)
-			return;
-		
-		if (this.hoverObject != null)
-		{
-			this.hoverObject.hover = false;
-			this.hoverObject.markDirty();
-		}
-		
-		this.hoverObject = o;
-		if (o != null)
-		{
-			o.hover = true;
-			o.markDirty();
-		}
-		
-		this.mousePoint = null;
+		input.keys["X"] = false;
+		this.clickedObject.remove(this.mousePointSaved);
+	}
+	
+	if (input.key("N") && this.clickedObject != null && this.clickedObject.insertable == true)
+	{
+		input.keys["N"] = false;
+		this.clickedObject.insert();
 	}
 }
 
 GameLogic.prototype.update = function(dt)
 {
+	this.processMouse();
 	this.processKeys(dt);
 }
 
 GameLogic.prototype.mouseMove = function(point)
 {
 	this.mousePoint = point;
+	this.mousePointSaved = point;
 }
 
 GameLogic.prototype.mouseChange = function(down)
 {
 	this.mouseDown = down;
+}
+
+GameLogic.prototype.spawn = function(type)
+{
+	switch (type)
+	{
+		case "invertor":
+			var target = new RedModule();
+			target.data.invertor = true;
+			this.model.putPart("redModule", target);
+			var rmd1 = new RedModuleDrawer(target, this.getNewId());
+			game.scene.add(rmd1);
+			game.scene.markDirtyAll();
+			break;
+			
+		case "redModule":
+			var target = new RedModule();
+			target.data.invertor = false;
+			this.model.putPart("redModule", target);
+			var rmd1 = new RedModuleDrawer(target, this.getNewId());
+			game.scene.add(rmd1);
+			game.scene.markDirtyAll();
+			break;
+			
+		default:
+			throw new Error("Undefined type for spawn: " + type);
+			break;
+	}
 }

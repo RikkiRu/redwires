@@ -8,6 +8,13 @@ function Render(canvas, scene)
 	
 	canvas.width = canvas.clientWidth;
 	canvas.height = canvas.clientHeight;
+	this.clientWidth2 = canvas.clientWidth / 2;
+	this.clientHeight2 = canvas.clientHeight / 2;
+}
+
+Render.prototype.getScreenCenter = function()
+{
+	return new Point(-this.camera.x + this.clientWidth2, -this.camera.y + this.clientHeight2);
 }
 
 Render.prototype.saveCamera = function()

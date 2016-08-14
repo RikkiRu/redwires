@@ -26,23 +26,47 @@ Scene.prototype.markDirtyAll = function()
 
 Scene.prototype.markDirty = function(gameObject)
 {
+	for (var i = 0; i < this.dirtyIDs.length; i++)
+	{
+		if (this.dirtyIDs[i] == gameObject.id)
+			return;
+	}
+	
 	this.dirtyIDs.push(gameObject.id);
 }
 
 Scene.prototype.getIntersect = function(point)
-{
+{	
+	var res = [];
 	var objects = this.objects;
 	
 	var i = objects.reset();
 	while(i != null)
 	{
 		var o = objects.get(i.id);
-		if (o.intersectable && o.isIntersect(point))
+		if (o.intersectable)
 		{
-			return o;
+			if (o.isIntersect(point))
+			{
+				res.push(o);
+				
+				if (!o.hover)
+				{
+					o.hover = true;
+					o.markDirty();
+				}
+			}
+			else
+			{
+				if (o.hover)
+				{
+					o.hover = false;
+					o.markDirty();
+				}
+			}
 		}
 		i = objects.next();
 	}
 	
-	return null;
+	return res;
 }

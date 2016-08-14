@@ -3,8 +3,8 @@ function Render(canvas, scene)
 	this.ctx = canvas.getContext('2d');
 	this.scene = scene;
 	this.camera = new Point(0, 0);
-	this.savedCamera = null;
-	this.time = (new Date).getTime();
+	this.savedCamera = null; 			// For correct cleaning last game objects position
+	this.time = (new Date).getTime(); 	// For deltha time calculating
 	
 	canvas.width = canvas.clientWidth;
 	canvas.height = canvas.clientHeight;

@@ -7,13 +7,18 @@ function Game()
 	this.input = new Input(this.canvas, this.render.camera);
 }
 
+Game.prototype.awake = function()
+{
+	this.resources = new Resources();
+	this.resources.load(TexturesList, game.start);
+}
+
 Game.prototype.start = function()
 {
 	console.log("Game.start()");
-	
-	this.logic.start();
-	this.input.start();
-	this.render.draw();	
+	game.logic.start();
+	game.input.start();
+	game.render.draw();	
 }
 
 var game = new Game();

@@ -21,10 +21,10 @@ GameLogic.prototype.start = function()
 	var model = new Model();
 	this.model = model;
 	
-	for (var i in model.parts)
+	for (var i in model.data.parts)
 	{
-		var part = model.parts[i];
-		var rmd1 = new RedModuleDrawer(model, i, part.target, this.getNewId());
+		var part = model.data.parts[i];
+		var rmd1 = new RedModuleDrawer(part, this.getNewId());
 		game.scene.add(rmd1);
 	}
 }
@@ -136,8 +136,8 @@ GameLogic.prototype.spawn = function(type)
 		case "invertor":
 			var target = new RedModule();
 			target.data.invertor = true;
-			var id = this.model.putPart("redModule", target);
-			var rmd1 = new RedModuleDrawer(this.model, id, target, this.getNewId());
+			this.model.putPart(target);
+			var rmd1 = new RedModuleDrawer(target, this.getNewId());
 			game.scene.add(rmd1);
 			game.scene.markDirtyAll();
 			break;
@@ -145,8 +145,8 @@ GameLogic.prototype.spawn = function(type)
 		case "redModule":
 			var target = new RedModule();
 			target.data.invertor = false;
-			var id = this.model.putPart("redModule", target);
-			var rmd1 = new RedModuleDrawer(this.model, id, target, this.getNewId());
+			this.model.putPart(target);
+			var rmd1 = new RedModuleDrawer(target, this.getNewId());
 			game.scene.add(rmd1);
 			game.scene.markDirtyAll();
 			break;

@@ -2,158 +2,107 @@ function Model()
 {
 	var data =  { };
 	data.name = "Unknown model";
-	data.description = "";
+	data.description = "No description";
 	data.idCounter = 0;
-	data.table = null; // Таблица истиности
 	data.connections = {};
+	data.timeOut = 50;
+	data.time = data.timeOut + 1;
+	data.parts = {};
+	data.events = [];
 	this.data = data;
-	this.timeOut = 50;
-	this.time = this.timeOut + 1;
 	
-	this.parts = {};
-	this.putPart("redModule", new RedModule());
-	
-	this.init();
-}
-
-Model.prototype.init = function()
-{
-	this.events = [];
+	this.putPart(new RedModule());
 }
 
 Model.prototype.registerEvent = function(event)
 {
-	this.events.push(event);
+	this.data.events.push(event);
 }
 
 Model.prototype.process = function(dt)
 {
-	if (this.events.length < 1)
+	if (this.data.events.length < 1)
 		return;
-		
-	this.time += dt;
-	if (this.time > this.timeOut)
+	
+	this.data.time += dt;
+	
+	if (this.data.time > this.data.timeOut)
 	{
-		this.time = 0;
+		this.data.time = 0;
 		
-		var event = this.events[0];
-		this.events.splice(0, 1);
-		
+		var event = this.data.events[0];
+		this.data.events.splice(0, 1);
 		this.passEvent(event);
 		
-		if (this.events.length < 1)
-			this.time = this.timeOut;
+		if (this.data.events.length < 1)
+			this.data.time = this.data.timeOut;
+			
+		game.scene.markDirtyAll();
 	}
 }
 
-Model.prototype.passEvent = function(event)
+Model.prototype.passEvent = function(target)
 {
-	if (this.updateNode(event.target))
+	if (this.updateNode(target))
 	{
-		//console.log("Updated node: " + event.target.id);
-
-		for (var i = 0; i < this.data.connections[event.target.id].length; i++)
+		for (var i=0; i<target.data.outputs.array.length; i++)
 		{
-			var out = this.parts[this.data.connections[event.target.id][i]].target;
-			//console.log("register out: " + out.id);
-			this.registerEvent({target: out});
+			var outputId = target.data.outputs.array[i];
+			var output = this.data.parts[outputId];
+			
+			this.registerEvent(output);
 		}
-		
-		game.scene.markDirtyAll();
 	}
 }
 
 Model.prototype.updateNode = function(node)
 {
-	var inputs = [];
+	var inputs = node.data.inputs.array;
+	var invertor = node.data.invertor;
+		
+	if (inputs.length == 0) return this.checkNodeState(node, node.data.userState);
 	
-	for (var i in this.data.connections)
+	for (var i=0; i<inputs.length; i++)
 	{
-		if (i == node.id) continue;
-
-		for (var j = 0; j<this.data.connections[i].length; j++)
+		var inputId = inputs[i];
+		var input = this.data.parts[inputId];
+		
+		if (input.data.active)
 		{
-			if (this.data.connections[i][j] == node.id)
-			{
-				inputs.push(this.parts[i].target);
-			}
+			return this.checkNodeState(node, !invertor);
 		}
 	}
-	
-	//console.log("update node " + node.id + "; inputs: " + inputs.length);
-	
-	if (inputs.length == 0)
-	{
-		return this.checkNodeState(node, node.userState);
-	}
-	
-	if (node.data.invertor)
-	{
-		for (var i=0; i<inputs.length; i++)
-		{
-			var input = inputs[i];
-			if (input.active)
-			{
-				return this.checkNodeState(node, false);
-			}
-		}
-		return this.checkNodeState(node, true);
-	}
-	else
-	{
-		for (var i=0; i<inputs.length; i++)
-		{
-			var input = inputs[i];
-			//console.log("input " + input.id + " active " + input.active);
-			
-			if (input.active)
-			{
-				return this.checkNodeState(node, true);
-			}
-		}
-		return this.checkNodeState(node, false);
-	}
+	return this.checkNodeState(node, invertor);
 }
 
 Model.prototype.checkNodeState = function(node, newState)
 {
-	//console.log("check node state: " + node.id + " active now: " + node.active + "; need: " + newState);
-	
-	if (node.active)
+	if (node.data.active)
 	{
 		if (newState)
 			return false;
-		node.active = false;
-			return true;
+		
+		node.data.active = false;
+		return true;
 	}
 	else
 	{
-		if (newState)
-		{
-			node.active = true;
-			return true;
-		}
-		
-		return false;
+		if (!newState)
+			return false;
+			
+		node.data.active = true;
+		return true;
 	}
 }
 
-Model.prototype.getNewId = function()
+Model.prototype.putPart = function(target)
 {
 	this.data.idCounter++;
-	return this.data.idCounter;
-}
-
-Model.prototype.putPart = function(type, target)
-{
-	var id = this.getNewId();
+	var id = this.data.idCounter;
 	target.model = this;
-	target.id = id;
-	target.active = target.data.invertor;
-	
-	this.parts[id] = {type: type, target: target};
-	this.data.connections[id] = [];
-	return id;
+	target.data.id = id;
+	target.data.active = target.data.invertor;
+	this.data.parts[id] = target;
 }
 
 Model.prototype.putConnection = function (idFrom, idTo)
@@ -161,52 +110,40 @@ Model.prototype.putConnection = function (idFrom, idTo)
 	if (idFrom == idTo)
 		return;
 	
-	for (var i = 0; i < this.data.connections[idFrom].length; i++)
-	{
-		if (this.data.connections[idFrom][i] == idTo)
-			return;
-	}
+	var from = this.data.parts[idFrom];
+	var to = this.data.parts[idTo];
 	
-	this.data.connections[idFrom].push(idTo);
-	this.registerEvent({target: this.parts[idTo].target});
+	from.data.outputs.put(idTo);
+	to.data.inputs.put(idFrom);
+	
+	this.registerEvent(to);
 }
 
 Model.prototype.removeConnection = function (idFrom, idTo)
 {	
-	for (var i=0; i<this.data.connections[idFrom].length; i++)
-	{
-		if (this.data.connections[idFrom][i] == idTo)
-		{
-			this.data.connections[idFrom].splice(i, 1);
-			this.registerEvent({target: this.parts[idTo].target});
-			return;
-		}
-	}
+	var from = this.data.parts[idFrom];
+	var to = this.data.parts[idTo];
+	
+	from.data.outputs.remove(idTo);
+	to.data.inputs.remove(idFrom);
+	this.registerEvent(to);
 }
 
 Model.prototype.removePart = function(id)
 {
-	delete this.parts[id];
+	var removing = this.data.parts[id];
 	
-	if (this.data.connections[id] != null) delete this.data.connections[id];
-	
-	for (var i in this.data.connections)
+	for (var i=0; i<removing.data.inputs.array.length; i++)
 	{
-		for (var j = 0; j<this.data.connections[i].length; j++)
-		{
-			if (this.data.connections[i][j] == id)
-				this.data.connections[i].splice(j, 1);
-		}
+		var idFrom = removing.data.inputs.array[i];
+		this.removeConnection(idFrom, removing.data.id);
 	}
-}
-
-Model.prototype.toJson = function()
-{
-	return JSON.stringify(this.data);
-}
-
-Model.prototype.fromJson = function(json)
-{
-	this.data = JSON.parse(json);
-	this.init();
+	
+	for (var i=0; i<removing.data.outputs.array.length; i++)
+	{
+		var idTo = removing.data.outputs.array[i];
+		this.removeConnection(removing.data.id, idTo);
+	}
+	
+	delete this.data.parts[id];
 }

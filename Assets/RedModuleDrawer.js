@@ -1,17 +1,15 @@
-function RedModuleDrawer(model, moduleId, module, id)
+function RedModuleDrawer(module, id)
 {
 	GameObject.call(this, id);
 	this.module = module;
 	this.updateCenter();
-	this.needUpdateCenter = false;
+	
+	this.module.needUpdateCenter = false;
 	this.intersectable = true;
-	this.hover = false;
 	this.draggable = true;
 	this.removable = true;
 	this.insertable = true;
 	this.toggleable = true;
-	this.moduleId = moduleId;
-	this.model = model;
 }
 
 RedModuleDrawer.prototype = Object.create(GameObject.prototype);
@@ -44,6 +42,16 @@ RedModuleDrawer.prototype.updateCenter = function()
 		if (point.y < minY) minY = point.y;
 	}
 	
+	for (var i = 0; i < module.data.outputs.array.length; i++)
+	{
+		var output = module.model.data.parts[module.data.outputs.array[i]];
+		var point = output.data.points[0];
+		if (point.x > maxX) maxX = point.x;
+		if (point.x < minX) minX = point.x;
+		if (point.y > maxY) maxY = point.y;
+		if (point.y < minY) minY = point.y;
+	}
+	
 	var p1 = new Point(minX, minY);
 	var p2 = new Point(maxX, maxY);
 	this.point = p1.center(p2);
@@ -60,17 +68,18 @@ RedModuleDrawer.prototype.markDirty = function()
 
 RedModuleDrawer.prototype.draw = function(ctx)
 {	
-	if (this.needUpdateCenter)
+	if (this.module.needUpdateCenter)
 	{
 		this.updateCenter();
-		this.needUpdateCenter = false;
+		this.module.needUpdateCenter = false;
 	}	
 	
 	var module = this.module;
+	var model = module.model;
 	var points = module.data.points;
 	var invertor = module.data.invertor;
 	
-	var color = game.logic.colorPresets.get(module.colorPreset, module.active);
+	var color = game.logic.colorPresets.get(module.colorPreset, module.data.active);
 	
 	ctx.beginPath();
 	ctx.strokeStyle = color;
@@ -85,7 +94,7 @@ RedModuleDrawer.prototype.draw = function(ctx)
 	ctx.beginPath();
 	ctx.fillStyle = color;
 	
-	if(invertor) ctx.arc(points[0].x, points[0].y, this.lineWidth2x, 0, game.constants.Math_PI2);
+	if (invertor) ctx.arc(points[0].x, points[0].y, this.lineWidth2x, 0, game.constants.Math_PI2);
 	
 	var last = points[points.length - 1];
 	ctx.arc(last.x, last.y, this.lineWidth2x, 0, game.constants.Math_PI2);	
@@ -110,19 +119,31 @@ RedModuleDrawer.prototype.draw = function(ctx)
 		}
 	}
 	
-	var model = this.model;
-	var outConnections = model.data.connections[this.moduleId];
+	var outConnections = module.data.outputs.array;
+	
 	for (var i=0; i<outConnections.length; i++)
 	{
 		var toId = outConnections[i];
-		var toPoint = model.parts[toId].target.data.points[0];
-		
+		var toPoint = model.data.parts[toId].data.points[0];
 		ctx.beginPath();
 		ctx.strokeStyle = color;
 		ctx.lineWidth = this.lineWidth;
 		ctx.moveTo(last.x, last.y);
 		ctx.lineTo(toPoint.x, toPoint.y);
 		ctx.stroke();
+	}
+}
+
+RedModuleDrawer.prototype.updateInputs = function()
+{
+	var module = this.module;
+	
+	for (var i = 0; i < module.data.inputs.array.length; i++)
+	{
+		var id = module.data.inputs.array[i];
+		var input = module.model.data.parts[id];
+		
+		input.needUpdateCenter = true;
 	}
 }
 
@@ -133,7 +154,8 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 		var point = this.capturedDragPoint;
 		point.x = pointMouse.x;
 		point.y = pointMouse.y;
-		this.needUpdateCenter = true;
+		this.module.needUpdateCenter = true;
+		this.updateInputs();
 		this.markDirty();
 		return true;
 	}
@@ -151,7 +173,8 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 			this.capturedDragPointIndx = i;
 			point.x = pointMouse.x;
 			point.y = pointMouse.y;
-			this.needUpdateCenter = true;
+			this.module.needUpdateCenter = true;
+			this.updateInputs();
 			this.markDirty();
 			return true;
 		}
@@ -181,20 +204,19 @@ RedModuleDrawer.prototype.dragEnd = function(nearParts)
 			
 			if (enter.inRadius(this.capturedDragPoint, captureRadius))
 			{
-				this.model.putConnection(this.moduleId, o.moduleId);
+				this.module.model.putConnection(this.module.data.id, o.module.data.id);
 				this.markDirty();
 			}
 		}
 		
-		var model = this.model;
-		var outConnections = model.data.connections[this.moduleId];
+		var outConnections = module.data.outputs;
 		for (var i=0; i<outConnections.length; i++)
 		{
 			var toId = outConnections[i];
-			var toPoint = model.parts[toId].target.data.points[0];
+			var toPoint = model.data.parts[toId].data.points[0];
 			if (!toPoint.inRadius(this.capturedDragPoint, captureRadius))
 			{
-				model.removeConnection(this.moduleId, toId);
+				model.removeConnection(this.module.id, toId);
 				this.markDirty();
 			}
 		}
@@ -217,14 +239,14 @@ RedModuleDrawer.prototype.remove = function(pointMouse)
 		{
 			if (points.length < 3)
 			{
-				this.model.removePart(this.moduleId);
+				this.module.model.removePart(this.module.data.id);
 				this.destroy();
 				return;
 			}
 			else
 			{
 				points.splice(i, 1);
-				this.needUpdateCenter = true;
+				this.module.needUpdateCenter = true;
 				this.markDirty();
 				return;
 			}
@@ -239,12 +261,11 @@ RedModuleDrawer.prototype.insert = function()
 	
 	var diff = points[points.length - 1].diff(points[points.length - 2]);
 	points.push(points[points.length - 1].add(diff));
-	this.needUpdateCenter = true;
+	this.module.needUpdateCenter = true;
 	this.markDirty();
 }
 
 RedModuleDrawer.prototype.toggle = function()
 {
 	this.module.toggle();
-	this.markDirty();
 }

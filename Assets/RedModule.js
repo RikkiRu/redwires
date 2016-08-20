@@ -1,36 +1,28 @@
 function RedModule()
 {
 	var data = {};
+	
+	// data.id should be set in Model
 	data.points = [];
 	data.colorPreset = 0;
 	data.invertor = true;
+	data.active = false;
+	data.userState = false;
 	
-	data.points.push(game.render.getScreenCenter());
+	var p1 = game.render.getScreenCenter();
 	var p2 = game.render.getScreenCenter(); p2.x += 50;
+
+	data.points.push(p1);	
 	data.points.push(p2);
 	
+	data.inputs = new ArrayExtended();
+	data.outputs = new ArrayExtended();
+	
 	this.data = data;
-	this.init();
-}
-
-RedModule.prototype.init = function()
-{
-	this.active = false;
-}
-
-RedModule.prototype.toJson = function()
-{
-	return JSON.stringify(this.data);
-}
-
-RedModule.prototype.fromJson = function(json)
-{
-	this.data = JSON.parse(json);
-	this.init();
 }
 
 RedModule.prototype.toggle = function()
 {
-	this.userState = !this.active;	
-	this.model.registerEvent({target: this});
+	this.data.userState = !this.data.active;	
+	this.model.registerEvent(this);
 }

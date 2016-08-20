@@ -6,6 +6,7 @@ function GameLogic()
 	this.mousePoint = null;
 	this.mousePointSaved = null;
 	this.mouseDown = false;
+	this.divJsonShowed = false;
 }
 
 GameLogic.prototype.getNewId = function()
@@ -17,13 +18,17 @@ GameLogic.prototype.getNewId = function()
 GameLogic.prototype.start = function()
 {
 	console.log("GameLogic.start()");
-	
 	var model = new Model();
 	this.model = model;
-	
-	for (var i in model.data.parts)
+	this.spawnModel();
+	this.updatePanelElements();
+}
+
+GameLogic.prototype.spawnModel = function()
+{
+	for (var i in this.model.parts)
 	{
-		var part = model.data.parts[i];
+		var part = this.model.parts[i];
 		var rmd1 = new RedModuleDrawer(part, this.getNewId());
 		game.scene.add(rmd1);
 	}
@@ -155,4 +160,159 @@ GameLogic.prototype.spawn = function(type)
 			throw new Error("Undefined type for spawn: " + type);
 			break;
 	}
+}
+
+GameLogic.prototype.toJson = function()
+{
+	this.divJsonShowed = !this.divJsonShowed;
+	var divJson = document.getElementById("divJson");
+	divJson.style.display = this.divJsonShowed ? "block" : "none";
+	game.render.paused = this.divJsonShowed;
+}
+
+GameLogic.prototype.jsonFromCurrent = function()
+{
+	var json = "undefined json";
+	
+	if (this.model.events.length != 0)
+	{
+		json = "Error: can't serialize model while it's processing events";
+	}
+	else
+	{
+		json = this.model.toJson();
+	}
+	
+	var textArea = document.getElementById("textAreaId");
+	textArea.value = json;
+}
+
+GameLogic.prototype.jsonLoadToCurrent = function()
+{
+	game.scene.destroyAll();
+	var textArea = document.getElementById("textAreaId");
+	var json = textArea.value;
+	
+	this.model.fromJson(json);
+	this.spawnModel();
+	game.scene.markDirtyAll();
+	
+	this.toJson();
+}
+
+GameLogic.prototype.updatePanelElements = function()
+{
+	var ls = localStorage["panelElems"];
+	if (ls == null)
+	{
+		var p = [];
+		ls = JSON.stringify(p);
+		localStorage["panelElems"] = ls;
+	}
+	
+	var panel = document.getElementById("customPanelElements");
+	panel.innerHTML = "";
+	var lsParsed = JSON.parse(ls);
+	
+	for (var i=0; i<lsParsed.length; i++)
+	{
+		var deserialized = JSON.parse(lsParsed[i]);
+
+		var btn = document.createElement("button");
+		var name = deserialized.data.name;
+		btn.innerHTML = name;
+		
+		btn.style.cssFloat = "left";
+		btn.style.height = "24px";
+		btn.style.marginTop = "3px";
+		btn.style.marginBottom = "2px";
+		btn.style.marginLeft = "5px";
+		
+		btn.onclick = function() { game.logic.spawnFromPanel(name); };
+		panel.appendChild(btn);
+	}
+}
+
+GameLogic.prototype.spawnFromPanel = function(name)
+{
+	var ls = localStorage["panelElems"];
+	var lsParsed = JSON.parse(ls);
+	
+	for (var i=0; i<lsParsed.length; i++)
+	{
+		var deserialized = JSON.parse(lsParsed[i]);
+		if (deserialized.data.name == name)
+		{
+			var added = this.model.append(deserialized);
+			
+			for (var j=0; j<added.length; j++)
+			{
+				var part = added[j];
+				var rmd1 = new RedModuleDrawer(part, this.getNewId());
+				game.scene.add(rmd1);
+			}
+			
+			game.scene.markDirtyAll();		
+			return;
+		}
+	}
+	
+	throw new Error("Model not found: " + name);
+}
+
+GameLogic.prototype.toPanel = function()
+{
+	var textArea = document.getElementById("textAreaId");
+	var json = textArea.value;
+	var parsed = JSON.parse(json);
+	
+	var ls = localStorage["panelElems"];
+	var lsParsed = JSON.parse(ls);
+	
+	for (var i=0; i<lsParsed.length; i++)
+	{
+		var deserialized = JSON.parse(lsParsed[i]);
+		if (deserialized.data.name == parsed.data.name)
+		{
+			alert("Element «" + deserialized.data.name + "» already exists");
+			return;
+		}
+	}
+	
+	lsParsed.push(json);
+	localStorage["panelElems"] = JSON.stringify(lsParsed);
+	
+	this.toJson();
+	this.updatePanelElements();
+}
+
+GameLogic.prototype.deleteFromPanel = function()
+{
+	var textArea = document.getElementById("textAreaId");
+	var name = textArea.value;
+	
+	var ls = localStorage["panelElems"];
+	var lsParsed = JSON.parse(ls);
+	
+	var indx = -1;
+	
+	for (var i=0; i<lsParsed.length; i++)
+	{
+		var deserialized = JSON.parse(lsParsed[i]);
+		if (deserialized.data.name == name)
+		{
+			indx = i;
+			break;
+		}
+	}
+	
+	if (indx == -1)
+	{
+		alert("Element «" + name + "» not found in panel");
+		return;
+	}
+	
+	lsParsed.splice(indx, 1);
+	localStorage["panelElems"] = JSON.stringify(lsParsed);
+	this.updatePanelElements();
 }

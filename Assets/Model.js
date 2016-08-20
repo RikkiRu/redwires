@@ -4,24 +4,120 @@ function Model()
 	data.name = "Unknown model";
 	data.description = "No description";
 	data.idCounter = 0;
-	data.connections = {};
 	data.timeOut = 50;
 	data.time = data.timeOut + 1;
-	data.parts = {};
-	data.events = [];
 	this.data = data;
 	
-	this.putPart(new RedModule());
+	this.parts = {}; 	// Special serialization
+	this.events = [];
+}
+
+Model.prototype.toJson = function()
+{
+	var serialized = {};
+	serialized.data = this.data;
+	var parts = [];
+	for (var i in this.parts)
+	{
+		var p = this.parts[i];
+		parts.push(p.data);
+	}
+
+	serialized.parts = parts;
+	return JSON.stringify(serialized);
+}
+
+Model.prototype.convertModule = function(raw)
+{
+	var p = raw;
+	var np = new RedModule();
+	np.data = p;
+	np.model = this;
+	
+	var inputsRaw = np.data.inputs.array;
+	var outputsRaw = np.data.outputs.array;
+	np.data.inputs = new ArrayExtended();
+	np.data.outputs = new ArrayExtended();
+	np.data.inputs.array = inputsRaw;
+	np.data.outputs.array = outputsRaw;
+	
+	for (var j=0; j<np.data.points.length; j++)
+	{
+		var pointRaw = np.data.points[j];
+		np.data.points[j] = new Point(pointRaw.x, pointRaw.y);
+	}
+	
+	return np;
+}
+
+Model.prototype.fromJson = function(json)
+{
+	var deserialized = JSON.parse(json);
+	this.data = deserialized.data;
+	this.parts = {};
+	
+	for (var i in deserialized.parts)
+	{
+		var p = deserialized.parts[i];
+		var np = this.convertModule(p);
+		this.parts[np.data.id] = np;
+	}
+}
+
+Model.prototype.append = function(deserialized)
+{
+	this.data.idCounter++;
+	var idOffset = this.data.idCounter;
+	console.log("id offset " + idOffset);
+	var centerOffset = game.render.camera.clone();
+	
+	var added = [];
+	
+	var maxId = -1;
+	
+	for (var i in deserialized.parts)
+	{
+		var p = deserialized.parts[i];
+		
+		var np = this.convertModule(p);
+		
+		np.data.id += idOffset;
+		
+		if (np.data.id > maxId)
+			maxId = np.data.id;
+		
+		for (var j=0; j<np.data.points.length; j++)
+		{
+			np.data.points[j] = np.data.points[j].diff(centerOffset);
+		}
+		
+		for (var j=0; j<np.data.inputs.array.length; j++)
+		{
+			np.data.inputs.array[j] += idOffset;
+		}
+		
+		for (var j=0; j<np.data.outputs.array.length; j++)
+		{
+			np.data.outputs.array[j] += idOffset;
+		}
+		
+		this.parts[np.data.id] = np;
+		added.push(np);
+	}
+	
+	this.data.idCounter = maxId;
+	
+	return added;
 }
 
 Model.prototype.registerEvent = function(event)
 {
-	this.data.events.push(event);
+	this.events.push(event);
 }
 
 Model.prototype.process = function(dt)
 {
-	if (this.data.events.length < 1)
+	if (this.events.length < 1)
 		return;
 	
 	this.data.time += dt;
@@ -30,11 +126,11 @@ Model.prototype.process = function(dt)
 	{
 		this.data.time = 0;
 		
-		var event = this.data.events[0];
-		this.data.events.splice(0, 1);
+		var event = this.events[0];
+		this.events.splice(0, 1);
 		this.passEvent(event);
 		
-		if (this.data.events.length < 1)
+		if (this.events.length < 1)
 			this.data.time = this.data.timeOut;
 			
 		game.scene.markDirtyAll();
@@ -48,7 +144,7 @@ Model.prototype.passEvent = function(target)
 		for (var i=0; i<target.data.outputs.array.length; i++)
 		{
 			var outputId = target.data.outputs.array[i];
-			var output = this.data.parts[outputId];
+			var output = this.parts[outputId];
 			
 			this.registerEvent(output);
 		}
@@ -65,7 +161,7 @@ Model.prototype.updateNode = function(node)
 	for (var i=0; i<inputs.length; i++)
 	{
 		var inputId = inputs[i];
-		var input = this.data.parts[inputId];
+		var input = this.parts[inputId];
 		
 		if (input.data.active)
 		{
@@ -102,7 +198,7 @@ Model.prototype.putPart = function(target)
 	target.model = this;
 	target.data.id = id;
 	target.data.active = target.data.invertor;
-	this.data.parts[id] = target;
+	this.parts[id] = target;
 }
 
 Model.prototype.putConnection = function (idFrom, idTo)
@@ -110,8 +206,8 @@ Model.prototype.putConnection = function (idFrom, idTo)
 	if (idFrom == idTo)
 		return;
 	
-	var from = this.data.parts[idFrom];
-	var to = this.data.parts[idTo];
+	var from = this.parts[idFrom];
+	var to = this.parts[idTo];
 	
 	from.data.outputs.put(idTo);
 	to.data.inputs.put(idFrom);
@@ -121,8 +217,8 @@ Model.prototype.putConnection = function (idFrom, idTo)
 
 Model.prototype.removeConnection = function (idFrom, idTo)
 {	
-	var from = this.data.parts[idFrom];
-	var to = this.data.parts[idTo];
+	var from = this.parts[idFrom];
+	var to = this.parts[idTo];
 	
 	from.data.outputs.remove(idTo);
 	to.data.inputs.remove(idFrom);
@@ -131,7 +227,7 @@ Model.prototype.removeConnection = function (idFrom, idTo)
 
 Model.prototype.removePart = function(id)
 {
-	var removing = this.data.parts[id];
+	var removing = this.parts[id];
 	
 	for (var i=0; i<removing.data.inputs.array.length; i++)
 	{
@@ -145,5 +241,5 @@ Model.prototype.removePart = function(id)
 		this.removeConnection(removing.data.id, idTo);
 	}
 	
-	delete this.data.parts[id];
+	delete this.parts[id];
 }

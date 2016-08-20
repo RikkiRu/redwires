@@ -10,6 +10,7 @@ Scene.prototype.add = function(gameObject)
 	this.objects.add(gameObject);
 	gameObject.scene = this;
 	gameObject.addedToScene();
+	this.allDirty = false;
 }
 
 Scene.prototype.markDirtyAll = function()
@@ -32,11 +33,8 @@ Scene.prototype.markDirtyAll = function()
 
 Scene.prototype.markDirty = function(gameObject)
 {
-	for (var i = 0; i < this.dirtyIDs.length; i++)
-	{
-		if (this.dirtyIDs[i] == gameObject.id)
-			return;
-	}
+	if( this.dirtyIDs.indexOf(gameObject.id) != -1)
+		return;
 	
 	this.dirtyIDs.push(gameObject.id);
 }
@@ -80,4 +78,19 @@ Scene.prototype.getIntersect = function(point)
 Scene.prototype.destroy = function(object)
 {
 	this.objects.remove(object.id, true);
+}
+
+Scene.prototype.destroyAll = function()
+{
+	this.markDirtyAll();
+	
+	var objects = this.objects;
+	
+	var i = objects.reset();
+	while(i != null)
+	{
+		var o = objects.get(i.id);
+		o.destroy();
+		i = objects.next();
+	}
 }

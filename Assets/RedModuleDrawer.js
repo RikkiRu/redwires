@@ -44,7 +44,7 @@ RedModuleDrawer.prototype.updateCenter = function()
 	
 	for (var i = 0; i < module.data.outputs.array.length; i++)
 	{
-		var output = module.model.data.parts[module.data.outputs.array[i]];
+		var output = module.model.parts[module.data.outputs.array[i]];
 		var point = output.data.points[0];
 		if (point.x > maxX) maxX = point.x;
 		if (point.x < minX) minX = point.x;
@@ -67,7 +67,7 @@ RedModuleDrawer.prototype.markDirty = function()
 }
 
 RedModuleDrawer.prototype.draw = function(ctx)
-{	
+{
 	if (this.module.needUpdateCenter)
 	{
 		this.updateCenter();
@@ -124,7 +124,7 @@ RedModuleDrawer.prototype.draw = function(ctx)
 	for (var i=0; i<outConnections.length; i++)
 	{
 		var toId = outConnections[i];
-		var toPoint = model.data.parts[toId].data.points[0];
+		var toPoint = model.parts[toId].data.points[0];
 		ctx.beginPath();
 		ctx.strokeStyle = color;
 		ctx.lineWidth = this.lineWidth;
@@ -141,7 +141,7 @@ RedModuleDrawer.prototype.updateInputs = function()
 	for (var i = 0; i < module.data.inputs.array.length; i++)
 	{
 		var id = module.data.inputs.array[i];
-		var input = module.model.data.parts[id];
+		var input = module.model.parts[id];
 		
 		input.needUpdateCenter = true;
 	}
@@ -209,14 +209,14 @@ RedModuleDrawer.prototype.dragEnd = function(nearParts)
 			}
 		}
 		
-		var outConnections = module.data.outputs;
+		var outConnections = module.data.outputs.array;
 		for (var i=0; i<outConnections.length; i++)
 		{
 			var toId = outConnections[i];
-			var toPoint = model.data.parts[toId].data.points[0];
+			var toPoint = module.model.parts[toId].data.points[0];
 			if (!toPoint.inRadius(this.capturedDragPoint, captureRadius))
 			{
-				model.removeConnection(this.module.id, toId);
+				module.model.removeConnection(this.module.data.id, toId);
 				this.markDirty();
 			}
 		}
@@ -259,8 +259,12 @@ RedModuleDrawer.prototype.insert = function()
 	var module = this.module;
 	var points = module.data.points;
 	
+	var lastPoint = points[points.length - 1].clone();
+	
 	var diff = points[points.length - 1].diff(points[points.length - 2]);
-	points.push(points[points.length - 1].add(diff));
+	points[points.length - 1] = lastPoint.diff(new Point(diff.x/2, diff.y/2));
+	points.push(lastPoint);
+	
 	this.module.needUpdateCenter = true;
 	this.markDirty();
 }

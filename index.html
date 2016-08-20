@@ -9,9 +9,22 @@
 	<body onload="game.awake()" style="width: 100%; height: 100%; padding: 0; margin: 0;">
 	
 		<canvas id="canvasMain" style="cursor: default; width: 100%; height: 100%; background: #F2F2F2; position: fixed; top: 0; left: 0;"></canvas>
-		<div style="width: 100%; height: 30px;  position: fixed; background: #9FB9CC;">
-			<div onclick="game.logic.spawn('invertor')" style="float: left; width: 30px; height: 30px; background-image: url(Resources/Textures/buttons/redModule.png)"></div>
-			<div onclick="game.logic.spawn('redModule')" style="float: left;  width: 30px; height: 30px; background-image: url(Resources/Textures/buttons/redModule_1.png)"></div>
+		<div style="width: 100%; position: fixed; background: #9FB9CC;">
+			<button onclick="game.logic.toJson()" style="float: left; height: 24px; margin-top: 3px; margin-left: 5px;">JSON</button>
+			<div onclick="game.logic.spawn('invertor')" style="margin-left: 5px; float: left; width: 30px; height: 30px; background-image: url(Resources/Textures/buttons/redModule.png)"></div>
+			<div onclick="game.logic.spawn('redModule')" style="margin-left: 5px; float: left;  width: 30px; height: 30px; background-image: url(Resources/Textures/buttons/redModule_1.png)"></div>
+			<div id="customPanelElements"></div>
+		</div>
+		
+		<div id="divJson" style="position: fixed; width: 90%; height: 90%; background: #EDFDFF; border: 2px solid black; margin-top: 10px; margin-left: 5%; display: none;">
+			<textarea id="textAreaId" style="position: absolute; width: 96%; height: 90%; top: 2%; left: 1.5%; resize: none"></textarea>
+			<div style="position: absolute; width: 90%; height: 5%; left: 5%; bottom: 0;">
+				<button onclick="game.logic.jsonFromCurrent()" style="float: left">From current</button>
+				<button onclick="game.logic.jsonLoadToCurrent()" style="float: left">Load</button>
+				<button onclick="game.logic.toPanel()" style="float: left">To panel</button>
+				<button onclick="game.logic.deleteFromPanel()" style="float: left">Delete</button>
+				<button onclick="game.logic.toJson()" style="float: right">Close</button>
+			</div>
 		</div>
 		
 		<!-- SCRIPTS -->

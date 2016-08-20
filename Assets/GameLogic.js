@@ -34,13 +34,14 @@ GameLogic.prototype.processMouse = function()
 	if (this.mousePoint != null)
 	{
 		var point = this.mousePoint;
-		var mass = game.scene.getIntersect(point);
+		this.mousePoint = null;
+		var array = game.scene.getIntersect(point);
 		
 		if (this.hoverObject != null)
 		{
 			if (!this.mouseDown)
 			{
-				this.hoverObject.dragEnd(mass);
+				this.hoverObject.dragEnd(array);
 				this.hoverObject = null;
 			}
 			else
@@ -52,9 +53,9 @@ GameLogic.prototype.processMouse = function()
 		{
 			if (this.mouseDown)
 			{
-				for (var i=0; i<mass.length; i++)
+				for (var i=0; i<array.length; i++)
 				{
-					var o = mass[i];
+					var o = array[i];
 					if (!o.draggable) continue;
 				
 					if (o.drag(point))
@@ -66,7 +67,6 @@ GameLogic.prototype.processMouse = function()
 				}
 			}
 		}		
-		this.mousePoint = null;
 	}
 }
 

@@ -1,0 +1,1 @@
+start "" TortoiseGitProc.exe /command:log /path:"D:\Dev\Javascript\redwires.rikkiru.github.io"

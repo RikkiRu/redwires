@@ -3,6 +3,7 @@ function RedModuleDrawer(model, moduleId, module, id)
 	GameObject.call(this, id);
 	this.module = module;
 	this.updateCenter();
+	this.needUpdateCenter = false;
 	this.intersectable = true;
 	this.hover = false;
 	this.draggable = true;
@@ -59,6 +60,12 @@ RedModuleDrawer.prototype.markDirty = function()
 
 RedModuleDrawer.prototype.draw = function(ctx)
 {	
+	if (this.needUpdateCenter)
+	{
+		this.updateCenter();
+		this.needUpdateCenter = false;
+	}	
+	
 	var module = this.module;
 	var points = module.data.points;
 	var invertor = module.data.invertor;
@@ -126,7 +133,7 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 		var point = this.capturedDragPoint;
 		point.x = pointMouse.x;
 		point.y = pointMouse.y;
-		this.updateCenter();
+		this.needUpdateCenter = true;
 		this.markDirty();
 		return true;
 	}
@@ -144,7 +151,7 @@ RedModuleDrawer.prototype.drag = function(pointMouse)
 			this.capturedDragPointIndx = i;
 			point.x = pointMouse.x;
 			point.y = pointMouse.y;
-			this.updateCenter();
+			this.needUpdateCenter = true;
 			this.markDirty();
 			return true;
 		}
@@ -217,7 +224,7 @@ RedModuleDrawer.prototype.remove = function(pointMouse)
 			else
 			{
 				points.splice(i, 1);
-				this.updateCenter();
+				this.needUpdateCenter = true;
 				this.markDirty();
 				return;
 			}
@@ -232,7 +239,7 @@ RedModuleDrawer.prototype.insert = function()
 	
 	var diff = points[points.length - 1].diff(points[points.length - 2]);
 	points.push(points[points.length - 1].add(diff));
-	this.updateCenter();
+	this.needUpdateCenter = true;
 	this.markDirty();
 }
 

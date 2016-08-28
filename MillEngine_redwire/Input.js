@@ -49,12 +49,12 @@ Input.prototype.toggleKey = function(e, status)
 
 Input.prototype.raiseMouseMove = function(coords)
 {
-	game.logic.mouseMove(coords);
+	game.scene.mouseMove(coords);
 };
 
 Input.prototype.raiseMouseChange = function(down)
 {
-	game.logic.mouseChange(down);
+	game.scene.mouseChange(down);
 };
 
 Input.prototype.raiseClick = function(coords, button)

@@ -35,6 +35,7 @@ Render.prototype.draw = function()
 		
 		var now = (new Date).getTime();
 		var dt = now - self.time;
+		game.scene.update(dt);
 		game.logic.update(dt);
 		self.time = now;
 		

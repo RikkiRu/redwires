@@ -3,9 +3,7 @@ function GameLogic()
 	this.cameraSpeed = 1;
 	this.counter = 0;
 	this.colorPresets = new ColorPresets();
-	this.mousePoint = null;
-	this.mousePointSaved = null;
-	this.mouseDown = false;
+
 	this.divJsonShowed = false;
 }
 
@@ -34,47 +32,6 @@ GameLogic.prototype.spawnModel = function()
 	}
 }
 
-GameLogic.prototype.processMouse = function()
-{
-	if (this.mousePoint != null)
-	{
-		var point = this.mousePoint;
-		this.mousePoint = null;
-		var array = game.scene.getIntersect(point);
-		
-		if (this.hoverObject != null)
-		{
-			if (!this.mouseDown)
-			{
-				this.hoverObject.dragEnd(array);
-				this.hoverObject = null;
-			}
-			else
-			{
-				this.hoverObject.drag(point);
-			}
-		}
-		else
-		{
-			if (this.mouseDown)
-			{
-				for (var i=0; i<array.length; i++)
-				{
-					var o = array[i];
-					if (!o.draggable) continue;
-				
-					if (o.drag(point))
-					{
-						this.hoverObject = o;
-						this.clickedObject = o;
-						break;
-					}
-				}
-			}
-		}		
-	}
-}
-
 GameLogic.prototype.processKeys = function(dt)
 {
 	var input = game.input;
@@ -96,42 +53,32 @@ GameLogic.prototype.processKeys = function(dt)
 		game.scene.markDirtyAll();
 	}
 	
-	if (input.key("X") && this.clickedObject != null && this.clickedObject.removable == true && this.mousePointSaved != null)
+	var clickedObject = game.scene.clickedObject;
+	var mousePointSaved = game.scene.mousePointSaved;
+	
+	if (input.key("X") && clickedObject != null && clickedObject.removable == true && mousePointSaved != null)
 	{
 		input.keys["X"] = false;
-		this.clickedObject.remove(this.mousePointSaved);
+		clickedObject.remove(mousePointSaved);
 	}
 	
-	if (input.key("N") && this.clickedObject != null && this.clickedObject.insertable == true)
+	if (input.key("N") && clickedObject != null && clickedObject.insertable == true)
 	{
 		input.keys["N"] = false;
-		this.clickedObject.insert();
+		clickedObject.insert();
 	}
 	
-	if (input.key("SPACE") && this.clickedObject != null && this.clickedObject.toggleable == true)
+	if (input.key("SPACE") && clickedObject != null && clickedObject.toggleable == true)
 	{
 		input.keys["SPACE"] = false;
-		this.clickedObject.toggle();
+		clickedObject.toggle();
 	}
 }
 
 GameLogic.prototype.update = function(dt)
 {
-	this.processMouse();
 	this.processKeys(dt);
 	this.model.process(dt);
-}
-
-GameLogic.prototype.mouseMove = function(point)
-{
-	this.mousePoint = point;
-	this.mousePointSaved = point;
-}
-
-GameLogic.prototype.mouseChange = function(down)
-{
-	this.mouseDown = down;
-	this.mousePoint = this.mousePointSaved;
 }
 
 GameLogic.prototype.spawn = function(type)

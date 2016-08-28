@@ -13,12 +13,12 @@ Point.prototype.center = function(point)
 
 Point.prototype.equals = function(point)
 {
-	return this.x == point.x && this.y == point.y;
+	return this.x === point.x && this.y === point.y;
 }
 
 Point.prototype.equalsXY = function(x, y)
 {
-	return this.x == x && this.y == y;
+	return this.x === x && this.y === y;
 }
 
 Point.prototype.clone = function()
@@ -45,4 +45,9 @@ Point.prototype.diff = function(point)
 Point.prototype.add = function(point)
 {
 	return new Point(this.x + point.x, this.y + point.y);
+}
+
+Point.prototype.inRect = function(rect)
+{
+	return this.x > rect.p1.x && this.x < rect.p2.x && this.y > rect.p1.y && this.y < rect.p2.y; 
 }

@@ -20,6 +20,13 @@ GameLogic.prototype.start = function()
 	this.model = model;
 	this.spawnModel();
 	this.updatePanelElements();
+	
+	var o1 = new GO_dragable(this.getNewId());
+	o1.point = new Point(150, 300);
+	game.scene.add(o1);
+	var o2 = new GO_dragable(this.getNewId());
+	o2.point = new Point(300, 300);
+	game.scene.add(o2);
 }
 
 GameLogic.prototype.spawnModel = function()

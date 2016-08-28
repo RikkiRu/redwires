@@ -56,12 +56,12 @@ Scene.prototype.getIntersect = function(point)
 		{
 			if (o.isIntersect(point))
 			{
-				res.push(o);
+				res.splice(0, 0, o);
 				
 				if (!o.hover)
 				{
 					o.hover = true;
-					o.markDirty();
+					game.scene.markDirtyAll();
 				}
 			}
 			else
@@ -69,7 +69,7 @@ Scene.prototype.getIntersect = function(point)
 				if (o.hover)
 				{
 					o.hover = false;
-					o.markDirty();
+					game.scene.markDirtyAll();
 				}
 			}
 		}

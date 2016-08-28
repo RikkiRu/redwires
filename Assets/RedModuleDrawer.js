@@ -10,6 +10,7 @@ function RedModuleDrawer(module, id)
 	this.removable = true;
 	this.insertable = true;
 	this.toggleable = true;
+	this.redModule = true;
 }
 
 RedModuleDrawer.prototype = Object.create(GameObject.prototype);
@@ -198,7 +199,7 @@ RedModuleDrawer.prototype.dragEnd = function(nearParts)
 		for (var i=0; i<nearParts.length; i++)
 		{
 			var o = nearParts[i];
-			if (o == this) continue;
+			if (o == this || o.redModule !== true) continue;
 			
 			var enter = o.module.data.points[0];
 			
